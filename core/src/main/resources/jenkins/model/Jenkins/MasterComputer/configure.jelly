@@ -22,24 +22,41 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 -->
 
+<!--
+  Configures aspects of the master as a build node.
+-->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout"
          xmlns:t="/lib/hudson" xmlns:f="/lib/form">
-  <st:documentation>
-    listbox for choosing the slave's usage.
+  <l:layout norefresh="true" permission="${it.CONFIGURE}" title="${%title(it.displayName)}">
+    <st:include page="sidepanel.jelly"/>
+    <l:main-panel>
+      <f:form method="post" action="configSubmit" name="config">
+        <j:set var="instance" value="${it.node}" />
+        <j:set var="descriptor" value="${instance.descriptor}" />
 
-    <st:attribute name="name">
-      Name of the &lt;select> element.
-    </st:attribute>
-    <st:attribute name="node">
-      Node object.
-    </st:attribute>
-  </st:documentation>
-  <f:entry title="${%Usage}" help="/help/system-config/master-slave/usage.html">
-    <select class="setting-input" name="${name}">
-      <j:forEach var="m" items="${h.getNodeModes()}">
-        <f:option value="${m.name}" selected="${m==node.mode}">${m.description}</f:option>
-      </j:forEach>
-    </select>
-  </f:entry>
+        <!-- Currently not editable
+        <f:entry title="${%Description}" help="/help/system-config/master-slave/description.html">
+          <f:textbox field="nodeDescription" />
+        </f:entry>
+        -->
+
+        <f:entry title="${%# of executors}" field="numExecutors">
+          <f:number clazz="positive-number" min="1" step="1" />
+        </f:entry>
+
+        <f:entry title="${%Labels}" field="labelString">
+          <f:textbox />
+        </f:entry>
+
+        <f:slave-mode name="master.mode" node="${it}" />
+
+        <f:descriptorList title="${%Node Properties}" descriptors="${h.getNodePropertyDescriptors(descriptor.clazz)}" field="nodeProperties" />
+
+        <f:block>
+          <f:submit value="${%Save}"/>
+        </f:block>
+      </f:form>
+    </l:main-panel>
+  </l:layout>
 </j:jelly>
