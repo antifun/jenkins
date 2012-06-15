@@ -30,6 +30,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Injector;
 import hudson.ExtensionComponent;
 import hudson.ExtensionFinder;
+import hudson.model.AbstractBuild;
 import hudson.model.LoadStatistics;
 import hudson.model.Messages;
 import hudson.model.Node;
@@ -2975,8 +2976,18 @@ public class Jenkins extends AbstractCIBase implements ModifiableItemGroup<TopLe
      * Reloads the configuration synchronously.
      */
     public void reload() throws IOException, InterruptedException, ReactorException {
+        // force saving of all currently running jobs so that they will reload in the same state.
+        for (Computer c : this.getComputers()) {
+            for (hudson.model.Executor e : c.getExecutors()) {
+                if (e.isBusy() && (e.getCurrentExecutable() instanceof AbstractBuild)) {
+                    AbstractBuild runningBuild = (AbstractBuild) e.getCurrentExecutable();
+                    runningBuild.save();
+                }
+            }
+        }
         executeReactor(null, loadTasks());
         User.reload();
+        
         servletContext.setAttribute("app", this);
     }
 

@@ -275,7 +275,7 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      */
     protected Run(JobT project, File buildDir) throws IOException {
         this(project, parseTimestampFromBuildDir(buildDir));
-        this.previousBuildInProgress = _this(); // loaded builds are always completed
+        this.previousBuildInProgress = _this(); 
         reload();
     }
 
@@ -285,9 +285,14 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
      * @since 1.410
      */
     public void reload() throws IOException {
-        this.state = State.COMPLETED;
-        this.result = Result.FAILURE;  // defensive measure. value should be overwritten by unmarshal, but just in case the saved data is inconsistent
         getDataFile().unmarshal(this); // load the rest of the data
+
+        if (this.state == null) {
+            this.state = State.COMPLETED;  // defensive measure. value should be written by unmarshal, but just in case the saved data is inconsistent
+        }
+        if (this.result == null) {
+            this.result = Result.FAILURE;  // defensive measure. value should be written by unmarshal, but just in case the saved data is inconsistent
+        }
 
         // not calling onLoad upon reload. partly because we don't want to call that from Run constructor,
         // and partly because some existing use of onLoad isn't assuming that it can be invoked multiple times.
@@ -347,6 +352,14 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
         return this.number - that.number;
     }
 
+    public State getState() {
+        return state;
+    }
+    
+    public void setState(State state) {
+        this.state = state;
+    }
+    
     /**
      * Returns the build result.
      *
@@ -360,9 +373,6 @@ public abstract class Run <JobT extends Job<JobT,RunT>,RunT extends Run<JobT,Run
     }
 
     public void setResult(Result r) {
-        // state can change only when we are building
-        assert state==State.BUILDING;
-
         // result can only get worse
         if(result==null) {
             result = r;
